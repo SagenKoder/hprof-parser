@@ -32,58 +32,32 @@
 
 package edu.tufts.eaftan.hprofparser;
 
-import com.google.common.collect.Lists;
-
-import edu.tufts.eaftan.hprofparser.handler.examples.PrintHandler;
-
-import edu.tufts.eaftan.hprofparser.handler.RecordHandler;
+import edu.tufts.eaftan.hprofparser.handler.SQLiteHandler;
 import edu.tufts.eaftan.hprofparser.parser.HprofParser;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.List;
 
 public class Parse {
-  
-  private static final Class<? extends RecordHandler> DEFAULT_HANDLER = PrintHandler.class; 
 
-  public static void main(String[] args) {
-    
-    List<String> argList = Lists.newArrayList(args);
+    public static void main(String[] args) {
 
-    if (argList.size() < 1) {
-      System.out.println("Usage: java Parse [--handler=<handler class>] inputfile");
-      System.exit(1);
-    }
-    
-    Class<? extends RecordHandler> handlerClass = DEFAULT_HANDLER;
-    for (String arg : argList) {
-      if (arg.startsWith("--handler=")) {
-        String handlerClassName = arg.substring("--handler=".length());
+        SQLiteHandler handler = new SQLiteHandler();
+        HprofParser parser = new HprofParser(handler);
+
         try {
-          handlerClass = (Class<? extends RecordHandler>) Class.forName(handlerClassName);
-        } catch (ClassNotFoundException e) {
-          System.err.println("Could not find class " + handlerClassName);
-          System.exit(1);
+            parser.parse(new File("/home/sagen/tlx/repos/hprof-parser/heapdump.hprof"));
+        } catch (IOException e) {
+            System.err.println(e);
         }
-      }
+
+        try {
+            Thread.sleep(10000);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+
+        handler.close();
     }
-
-    RecordHandler handler = null;
-    try {
-      handler = handlerClass.newInstance();
-    } catch (InstantiationException | IllegalAccessException e) {
-      System.err.println("Could not instantiate " + handlerClass);
-      System.exit(1);
-    }
-    HprofParser parser = new HprofParser(handler);
-
-    try {
-      parser.parse(new File(argList.get(argList.size() - 1)));
-    } catch (IOException e) {
-      System.err.println(e);
-    } 
-
-  }
 
 }
